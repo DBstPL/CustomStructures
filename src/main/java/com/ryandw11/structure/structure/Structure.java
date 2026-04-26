@@ -7,7 +7,6 @@ import com.ryandw11.structure.loottables.LootTableType;
 import com.ryandw11.structure.schematic.SchematicHandler;
 import com.ryandw11.structure.structure.properties.*;
 import com.ryandw11.structure.utils.RandomCollection;
-import com.sk89q.worldedit.WorldEditException;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -339,7 +338,7 @@ public class Structure {
         try {
             SchematicHandler.placeSchematic(location, getSchematic(), getStructureProperties().canPlaceAir(), this);
             return true;
-        } catch (IOException | WorldEditException ex) {
+        } catch (IOException ex) {
             if (CustomStructures.getInstance().isDebug()) {
                 ex.printStackTrace();
             }

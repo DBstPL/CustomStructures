@@ -126,6 +126,12 @@ public class CustomStructures extends JavaPlugin {
         loadFiles();
         debugMode = getConfig().getBoolean("debug");
 
+        if (getConfig().getBoolean("WorldEdit.Enabled", false) && Bukkit.getPluginManager().getPlugin("WorldEdit") != null) {
+            getLogger().info("WorldEdit support is enabled for schematic creation commands. Structure generation uses the built-in Folia-safe backend.");
+        } else {
+            getLogger().info("WorldEdit support is disabled. Structure generation uses the built-in Folia-safe backend.");
+        }
+
         if (getConfig().getInt("configversion") < CONFIG_VERSION) {
             this.lootTableHandler = new LootTableHandler();
             updateConfig(getConfig().getInt("configversion"));

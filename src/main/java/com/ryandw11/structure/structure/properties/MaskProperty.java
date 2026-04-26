@@ -1,25 +1,23 @@
 package com.ryandw11.structure.structure.properties;
 
-import com.sk89q.worldedit.extent.Extent;
-import com.sk89q.worldedit.extent.NullExtent;
-import com.sk89q.worldedit.function.mask.AbstractExtentMask;
-import com.sk89q.worldedit.function.mask.BlockTypeMask;
-import com.sk89q.worldedit.function.mask.Mask;
-import com.sk89q.worldedit.function.mask.Masks;
-import com.sk89q.worldedit.world.block.BlockType;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * A mask configuration property.
  */
 public class MaskProperty {
-    private final List<Mask> masks;
+    private final Set<String> blockTypeMask;
+    private final Set<String> negatedBlockMask;
     private MaskUnion unionType;
+    private boolean enabled;
 
     /**
      * Create the MaskProperty from a configuration file.
@@ -28,7 +26,10 @@ public class MaskProperty {
      * @param configuration The configuration file.
      */
     public MaskProperty(String name, FileConfiguration configuration) {
-        masks = new ArrayList<>();
+        blockTypeMask = new HashSet<>();
+        negatedBlockMask = new HashSet<>();
+        unionType = MaskUnion.AND;
+        enabled = false;
 
         if (!configuration.contains(name))
             return;
@@ -38,10 +39,9 @@ public class MaskProperty {
 
         if (!cs.contains("Enabled") || !cs.getBoolean("Enabled"))
             return;
+        enabled = true;
         if (cs.contains("UnionType")) {
             unionType = MaskUnion.valueOf(Objects.requireNonNull(cs.getString("UnionType")).toUpperCase());
-        } else {
-            unionType = MaskUnion.AND;
         }
 
         processBlockTypeMask(cs);
@@ -51,12 +51,17 @@ public class MaskProperty {
     /**
      * Construct MaskProperty
      *
-     * @param masks     The list of masks.
+     * @param masks     The list of Bukkit material names or namespaced block ids.
      * @param unionType The mask union type.
      */
-    public MaskProperty(List<Mask> masks, MaskUnion unionType) {
-        this.masks = masks;
+    public MaskProperty(List<String> masks, MaskUnion unionType) {
+        this.blockTypeMask = new HashSet<>();
+        this.negatedBlockMask = new HashSet<>();
+        for (String mask : masks) {
+            this.blockTypeMask.add(normalizeBlockId(mask));
+        }
         this.unionType = unionType;
+        this.enabled = !masks.isEmpty();
     }
 
     /**
@@ -78,62 +83,123 @@ public class MaskProperty {
     }
 
     /**
-     * Add a mask.
-     * <p>These masks are from the WorldEdit API.</p>
+     * Add a block type mask.
      *
-     * @param mask The mask to add.
+     * @param mask The block material or namespaced id to add.
      */
-    public void addMask(Mask mask) {
-        masks.add(mask);
+    public void addMask(String mask) {
+        enabled = true;
+        blockTypeMask.add(normalizeBlockId(mask));
     }
 
     /**
-     * Get the list of masks
-     * <p>Note: The extents of the masks are mutated by the plugin.</p>
+     * Get the list of positive block type masks.
      *
      * @return The list of masks.
      */
-    public List<Mask> getMasks() {
-        return masks;
+    public List<String> getMasks() {
+        return new ArrayList<>(blockTypeMask);
     }
 
     /**
-     * Get the list of masks with a certain extent.
-     * <p>Normal the Clipboard extent is used.</p>
+     * Check whether this mask should be applied.
      *
-     * @param extent The extent to use.
-     * @return The list of masks.
+     * @return If the mask is enabled.
      */
-    public List<Mask> getMasks(Extent extent) {
-        List<Mask> output = new ArrayList<>(getMasks());
-        for (Mask mask : output) {
-            ((AbstractExtentMask) mask).setExtent(extent);
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Test a schematic source block against this mask.
+     *
+     * @param blockStateString The schematic block state string.
+     * @param material         The Bukkit material parsed from the block state.
+     * @return If the block should be pasted.
+     */
+    public boolean matchesSource(String blockStateString, Material material) {
+        return matches(normalizeBlockStateId(blockStateString), normalizeMaterial(material));
+    }
+
+    /**
+     * Test an existing target block against this mask.
+     *
+     * @param material The target block material.
+     * @return If the target can be replaced.
+     */
+    public boolean matchesTarget(Material material) {
+        return matches(normalizeMaterial(material), normalizeMaterial(material));
+    }
+
+    private boolean matches(String primaryBlockId, String materialBlockId) {
+        if (!enabled) {
+            return true;
         }
 
-        return output;
+        List<Boolean> results = new ArrayList<>();
+        if (!blockTypeMask.isEmpty()) {
+            results.add(blockTypeMask.contains(primaryBlockId) || blockTypeMask.contains(materialBlockId));
+        }
+        if (!negatedBlockMask.isEmpty()) {
+            results.add(!negatedBlockMask.contains(primaryBlockId) && !negatedBlockMask.contains(materialBlockId));
+        }
+        if (results.isEmpty()) {
+            return true;
+        }
+
+        if (unionType == MaskUnion.OR) {
+            return results.stream().anyMatch(Boolean::booleanValue);
+        }
+        return results.stream().allMatch(Boolean::booleanValue);
     }
 
     private void processBlockTypeMask(ConfigurationSection cs) {
         if (!cs.contains("BlockTypeMask")) return;
-        List<BlockType> blockTypes = new ArrayList<>();
         List<String> blockTypeStrings = cs.getStringList("BlockTypeMask");
         for (String s : blockTypeStrings) {
-            blockTypes.add(BlockType.REGISTRY.get(s.toLowerCase()));
+            blockTypeMask.add(normalizeBlockId(s));
         }
-        BlockTypeMask blockTypeMask = new BlockTypeMask(new NullExtent(), blockTypes);
-        addMask(blockTypeMask);
     }
 
     private void processNegateBlockTypeMask(ConfigurationSection cs) {
         if (!cs.contains("NegatedBlockMask")) return;
-        List<BlockType> blockTypes = new ArrayList<>(BlockType.REGISTRY.values());
         List<String> blockTypeStrings = cs.getStringList("NegatedBlockMask");
         for (String s : blockTypeStrings) {
-            blockTypes.remove(BlockType.REGISTRY.get(s.toLowerCase()));
+            negatedBlockMask.add(normalizeBlockId(s));
+        }
+    }
+
+    private static String normalizeBlockStateId(String blockStateString) {
+        int propertyIndex = blockStateString.indexOf('[');
+        if (propertyIndex >= 0) {
+            return normalizeBlockId(blockStateString.substring(0, propertyIndex));
+        }
+        return normalizeBlockId(blockStateString);
+    }
+
+    private static String normalizeMaterial(Material material) {
+        if (material == null) {
+            return "minecraft:air";
+        }
+        return material.getKey().toString().toLowerCase();
+    }
+
+    private static String normalizeBlockId(String blockId) {
+        if (blockId == null || blockId.isBlank()) {
+            return "minecraft:air";
         }
 
-        BlockTypeMask blockTypeMask = new BlockTypeMask(new NullExtent(), blockTypes);
-        addMask(blockTypeMask);
+        String trimmed = blockId.trim();
+        Material material = Material.matchMaterial(trimmed);
+        if (material != null) {
+            return material.getKey().toString().toLowerCase();
+        }
+
+        String lower = trimmed.toLowerCase();
+        if (lower.contains(":")) {
+            return lower;
+        }
+        return "minecraft:" + lower;
     }
 
     /**

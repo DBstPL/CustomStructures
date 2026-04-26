@@ -10,12 +10,10 @@ import com.ryandw11.structure.structure.Structure;
 import com.ryandw11.structure.structure.StructureHandler;
 import com.ryandw11.structure.structure.properties.BlockLevelLimit;
 import com.ryandw11.structure.structure.properties.StructureYSpawning;
-import com.sk89q.worldedit.WorldEditException;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -96,7 +94,7 @@ public class StructurePicker {
                                     structure.getSchematic(),
                                     structure.getStructureProperties().canPlaceAir(),
                                     structure);
-                        } catch (IOException | WorldEditException e) {
+                        } catch (IOException e) {
                             e.printStackTrace();
                         }
                     });
@@ -213,7 +211,7 @@ public class StructurePicker {
                                 structure.getSchematic(),
                                 structure.getStructureProperties().canPlaceAir(),
                                 structure);
-                    } catch (IOException | WorldEditException e) {
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                 });

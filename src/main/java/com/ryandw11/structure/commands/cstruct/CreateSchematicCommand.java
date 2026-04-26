@@ -40,6 +40,10 @@ public class CreateSchematicCommand implements SubCommand {
                 return true;
             }
             Player p = (Player) sender;
+            if (!SchematicHandler.canUseWorldEditCreator()) {
+                p.sendMessage(ChatColor.RED + "WorldEdit support is disabled or WorldEdit is not installed. Enable WorldEdit.Enabled in config.yml to use this command.");
+                return true;
+            }
             String name = args[0].replace(".schem", "");
             if (SchematicHandler.createSchematic(name, p, p.getWorld(), false)) {
                 p.sendMessage(ChatColor.GREEN + "Successfully created a schematic with the name of " + ChatColor.GOLD + name + ChatColor.GREEN + "!");
@@ -59,6 +63,10 @@ public class CreateSchematicCommand implements SubCommand {
 
             if (args[1].equalsIgnoreCase("-c") || args[1].equalsIgnoreCase("-compile")) {
                 Player p = (Player) sender;
+                if (!SchematicHandler.canUseWorldEditCreator()) {
+                    p.sendMessage(ChatColor.RED + "WorldEdit support is disabled or WorldEdit is not installed. Enable WorldEdit.Enabled in config.yml to use this command.");
+                    return true;
+                }
                 String name = args[0].replace(".schem", "");
                 if (SchematicHandler.createSchematic(name, p, p.getWorld(), true)) {
                     p.sendMessage(ChatColor.GREEN + "Successfully created a schematic with the name of " + ChatColor.GOLD + name + ChatColor.GREEN + "!");
@@ -71,6 +79,10 @@ public class CreateSchematicCommand implements SubCommand {
             }
             if (args[1].equalsIgnoreCase("-cOnly") || args[1].equalsIgnoreCase("-compileOnly")) {
                 Player p = (Player) sender;
+                if (!SchematicHandler.canUseWorldEditCreator()) {
+                    p.sendMessage(ChatColor.RED + "WorldEdit support is disabled or WorldEdit is not installed. Enable WorldEdit.Enabled in config.yml to use this command.");
+                    return true;
+                }
                 String name = args[0].replace(".schem", "").replace(".cschem", "");
                 if (SchematicHandler.compileOnly(name, p, p.getWorld())) {
                     p.sendMessage(ChatColor.GREEN + "Successfully compiled the schematic with the name of " + ChatColor.GOLD + name + ChatColor.GREEN + "!");

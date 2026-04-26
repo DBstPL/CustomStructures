@@ -102,10 +102,7 @@ public final class SpongeSchematic {
     }
 
     public static int[] rotateRelative(int x, int z, double rotationDegrees) {
-        int normalized = (int) Math.round(rotationDegrees / 90.0) % 4;
-        if (normalized < 0) {
-            normalized += 4;
-        }
+        int normalized = normalizeRotation(rotationDegrees);
 
         return switch (normalized) {
             case 1 -> new int[]{z, -x};
@@ -113,5 +110,13 @@ public final class SpongeSchematic {
             case 3 -> new int[]{-z, x};
             default -> new int[]{x, z};
         };
+    }
+
+    public static int normalizeRotation(double rotationDegrees) {
+        int normalized = (int) Math.round(rotationDegrees / 90.0) % 4;
+        if (normalized < 0) {
+            normalized += 4;
+        }
+        return normalized;
     }
 }

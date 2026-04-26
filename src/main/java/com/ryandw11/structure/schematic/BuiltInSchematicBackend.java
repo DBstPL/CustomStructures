@@ -151,7 +151,7 @@ public final class BuiltInSchematicBackend {
                 pendingBlocks,
                 maxBlocks,
                 maxMillis,
-                pendingBlock -> placeBlock(world, pendingBlock, structure, postProcessLocations, postProcessKeys),
+                pendingBlock -> placeBlock(world, pendingBlock, structure, rotation, postProcessLocations, postProcessKeys),
                 () -> startBottomFill(schematic, pasteLocation, fillColumns, structure, iteration, rotation, postProcessLocations)
         ).start();
     }
@@ -214,7 +214,7 @@ public final class BuiltInSchematicBackend {
         }, delay * 50L, TimeUnit.MILLISECONDS);
     }
 
-    private static void placeBlock(World world, PendingBlock pendingBlock, Structure structure,
+    private static void placeBlock(World world, PendingBlock pendingBlock, Structure structure, double rotation,
                                    List<Location> postProcessLocations, Set<String> postProcessKeys) {
         if (pendingBlock.y < world.getMinHeight() || pendingBlock.y >= world.getMaxHeight()) {
             return;
@@ -229,7 +229,7 @@ public final class BuiltInSchematicBackend {
         if (replacement != null) {
             block.setType(replacement, false);
         } else {
-            block.setBlockData(pendingBlock.state.getBlockData(), false);
+            block.setBlockData(pendingBlock.state.getBlockData(rotation), false);
         }
 
         if (pendingBlock.blockEntity != null && pendingBlock.blockEntity.isSign() && block.getState() instanceof Sign sign) {

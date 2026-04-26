@@ -70,6 +70,16 @@ public final class SpongeSchematicReader {
     }
 
     private static int[] readOffset(CompoundBinaryTag tag) {
+        CompoundBinaryTag metadata = tag.getCompound("Metadata", CompoundBinaryTag.empty());
+        // WorldEdit v2 schematics may carry an unreliable Sponge Offset; WEOffset is the paste origin it used.
+        if (metadata.get("WEOffsetX") != null || metadata.get("WEOffsetY") != null || metadata.get("WEOffsetZ") != null) {
+            return new int[]{
+                    metadata.getInt("WEOffsetX", 0),
+                    metadata.getInt("WEOffsetY", 0),
+                    metadata.getInt("WEOffsetZ", 0)
+            };
+        }
+
         int[] offset = tag.getIntArray("Offset", new int[]{0, 0, 0});
         if (offset.length != 3) {
             return new int[]{0, 0, 0};

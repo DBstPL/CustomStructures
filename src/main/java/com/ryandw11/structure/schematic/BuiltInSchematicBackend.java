@@ -54,6 +54,7 @@ public final class BuiltInSchematicBackend {
                 List<PendingFillColumn> fillColumns = buildFillColumns(schematic, baseLocation, rotation, structure);
 
                 if (plugin.isDebug()) {
+                    logInvalidPaletteFallbacks(plugin, filename, schematic);
                     plugin.getLogger().info(String.format("(%s) Queued %s with %s blocks using built-in schematic backend (rotation %s).",
                             worldName, filename, pendingBlocks.size(), rotation));
                 }
@@ -75,6 +76,20 @@ public final class BuiltInSchematicBackend {
             return Math.toDegrees(structure.getSubSchemRotation());
         }
         return Math.toDegrees(structure.getBaseRotation());
+    }
+
+    private static void logInvalidPaletteFallbacks(CustomStructures plugin, String filename, SpongeSchematic schematic) {
+        Set<String> logged = new HashSet<>();
+        for (int y = 0; y < schematic.getHeight(); y++) {
+            for (int z = 0; z < schematic.getLength(); z++) {
+                for (int x = 0; x < schematic.getWidth(); x++) {
+                    SchematicBlockState blockState = schematic.getBlockState(x, y, z);
+                    if (blockState.isInvalid() && logged.add(blockState.getStateString())) {
+                        plugin.getLogger().warning("Schematic " + filename + " contains an unsupported block state, using sanitized fallback: " + blockState.getStateString());
+                    }
+                }
+            }
+        }
     }
 
     private static List<PendingBlock> buildPendingBlocks(SpongeSchematic schematic, Location pasteLocation,

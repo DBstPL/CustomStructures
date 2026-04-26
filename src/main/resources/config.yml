@@ -25,6 +25,8 @@ WorldEdit:
 SchematicPasting:
   MaxBlocksPerTick: 3000
   MaxMillisPerTick: 4.0
+  # Compressed .schem file size limit. Set to 0 to disable the file-size guard.
+  MaxSchematicFileSizeMB: 128
 
 # A global list of worlds that structures are allow to spawn in.
 GlobalWorldWhitelist: []

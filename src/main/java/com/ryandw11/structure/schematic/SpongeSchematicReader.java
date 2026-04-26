@@ -19,7 +19,15 @@ public final class SpongeSchematicReader {
     }
 
     public static SpongeSchematic read(File file) throws IOException {
-        CompoundBinaryTag root = BinaryTagIO.readCompressedPath(file.toPath());
+        return read(file, 0L);
+    }
+
+    public static SpongeSchematic read(File file, long maxFileSizeBytes) throws IOException {
+        if (maxFileSizeBytes > 0 && file.length() > maxFileSizeBytes) {
+            throw new IOException("Schematic " + file.getName() + " is larger than the configured limit of " + maxFileSizeBytes + " bytes.");
+        }
+
+        CompoundBinaryTag root = BinaryTagIO.unlimitedReader().read(file.toPath(), BinaryTagIO.Compression.GZIP);
         CompoundBinaryTag schematic = root.get("Schematic") instanceof CompoundBinaryTag
                 ? root.getCompound("Schematic")
                 : root;

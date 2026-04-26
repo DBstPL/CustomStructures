@@ -47,7 +47,7 @@ public final class BuiltInSchematicBackend {
 
         Bukkit.getAsyncScheduler().runNow(plugin, task -> {
             try {
-                SpongeSchematic schematic = SpongeSchematicReader.read(schematicFile);
+                SpongeSchematic schematic = SpongeSchematicReader.read(schematicFile, getMaxSchematicFileSizeBytes(plugin));
                 Location baseLocation = new Location(world, pasteX, pasteY, pasteZ);
                 double rotation = selectRotation(structure, iteration);
                 List<PendingBlock> pendingBlocks = buildPendingBlocks(schematic, baseLocation, rotation, useAir, structure);
@@ -311,6 +311,14 @@ public final class BuiltInSchematicBackend {
 
     private static double getMaxMillisPerTick(CustomStructures plugin) {
         return Math.max(0.25D, plugin.getConfig().getDouble("SchematicPasting.MaxMillisPerTick", 4.0D));
+    }
+
+    private static long getMaxSchematicFileSizeBytes(CustomStructures plugin) {
+        long megabytes = plugin.getConfig().getLong("SchematicPasting.MaxSchematicFileSizeMB", 128L);
+        if (megabytes <= 0) {
+            return 0L;
+        }
+        return megabytes * 1024L * 1024L;
     }
 
     private static final class PendingBlock implements FoliaRegionWorkRunner.RegionWorkItem {
